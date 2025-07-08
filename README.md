@@ -54,7 +54,7 @@ This is the simplest way to get started. You just need to download the pre-built
     *   Follow the instructions in the **[Configuration (`config.ini`)](#-configuration-configini)** section below to get your API keys and add them to the file.
 
 4.  **Run the Assistant**
-    *   Double-click `Rem-Assistant.exe`. Rem should now appear on your desktop!
+    *   Double-click `RemAI_Assistant.exe`. Rem should now appear on your desktop!
 
 ### Method 2: Installation from Source (For Developers)
 
