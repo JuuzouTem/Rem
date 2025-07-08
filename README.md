@@ -31,10 +31,10 @@ This is the simplest way to get started. You just need to download the pre-built
 
 1.  **Download the Latest Release**
     *   Go to the **[Releases Page](https://github.com/JuuzouTem/Rem/releases/latest)**.
-    *   Under the "Assets" section, download the `Rem-Assistant.exe` file.
+    *   Under the "Assets" section, download the `RemAI_Assistant.exe` file.
 
 2.  **Create the Configuration File**
-    *   In the **same folder** where you saved `Rem-Assistant.exe`, create a new text file and name it `config.ini`.
+    *   In the **same folder** where you saved `RemAI_Assistant.exe`, create a new text file and name it `config.ini`.
     *   Copy and paste the following template into your new `config.ini` file:
       ```ini
       [Gemini]
