@@ -2,7 +2,6 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/JuuzouTem/Rem?style=for-the-badge&label=Latest%20Release)](https://github.com/JuuzouTem/Rem/releases/latest)
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue?style=for-the-badge)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 
 An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*. This character lives on your desktop, visually analyzing your screen to interact with icons and windows, responding to your voice commands, and performing a wide range of tasks. She'll stay on your desktop, ready to assist with tasks, answer questions, or just keep you company.
 
