@@ -9,7 +9,7 @@ An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*.
 
 ## ✨ Features
 
-*   **Visual Awareness**: Powered by Gemini 1.5 Flash, Rem can "see" your screen, identify icons or windows, and decide to move towards them.
+*   **Visual Awareness**: Powered by Gemini 2.5 Flash, Rem can "see" your screen, identify icons or windows, and decide to move towards them.
 *   **Voice Control**: Activate her by calling her wake word ("Rem" by default) and give commands in natural language.
 *   **Dynamically Extensible Commands**: Add new, complex skills by simply editing a JSON file, without touching the core Python code. The AI will learn the "recipe" and generate the necessary code on the fly.
 *   **Core Assistant Tools**:
