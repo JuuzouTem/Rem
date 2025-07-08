@@ -5,9 +5,6 @@
 
 An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*. This character lives on your desktop, visually analyzing your screen to interact with icons and windows, responding to your voice commands, and performing a wide range of tasks. She'll stay on your desktop, ready to assist with tasks, answer questions, or just keep you company.
 
-*A GIF showcasing the assistant in action would be a great addition here!*  
-`![Assistant in Action](demo.gif)`
-
 ---
 
 ## ✨ Features
