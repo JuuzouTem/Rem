@@ -1,5 +1,3 @@
-# GÜNCEL VE TAM assistant.py (Dinamik Özel Komut Yetenekli)
-
 import sys
 import os
 import random
@@ -27,7 +25,6 @@ from PyQt5.QtCore import Qt, QTimer, QPoint, pyqtSignal
 import tools
 
 class SettingsDialog(QDialog):
-    # Bu sınıf değişmedi...
     def __init__(self, config_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Ayarlar")
@@ -79,13 +76,11 @@ class DesktopAssistant(QWidget):
     
     def __init__(self):
         super().__init__()
-        # ... Önceki kodlar ...
         self.response_ready.connect(self.handle_ai_response)
         self.move_decision_ready.connect(self.handle_ai_response)
         self.config_path = 'config.ini'
         self.config = self.load_or_create_config()
         
-        # YENİ SİSTEM: Komutları ve fonksiyonları eşleştiren harita
         self.command_map = {
             "uyku_modu": self.enter_sleep_mode,
             "uygulamayi_kapat": self.shutdown_assistant,
@@ -155,18 +150,14 @@ class DesktopAssistant(QWidget):
         self.action_timer = QTimer(self); self.action_timer.timeout.connect(self.decide_new_action); self.action_timer.start(20000)
         self.set_character_image(); self.show(); print("Asistan hazır. Etkileşim için sağ tıklayın veya Ctrl+Sağ Tık yapın.")
 
-    # --- ÖZEL KOMUT FONKSİYONLARI ---
-    # Her bir özel komut için ayrı bir fonksiyon tanımlıyoruz.
-    # Bu fonksiyonlar, karakterin konuşma balonunda göstereceği metni geri döndürür.
     def enter_sleep_mode(self):
         self.set_state('sleeping')
         return "Tatlı rüyalar, efendim."
 
     def shutdown_assistant(self):
-        # Önce mesajı göster, sonra kapan.
         self.show_speech_bubble("Görüşmek üzere, efendim.", force_speak=True)
         QTimer.singleShot(2000, self.close) # 2 saniye sonra kapan
-        return "" # Bu metin gösterilmeyecek ama fonksiyon bir şey döndürmeli
+        return ""
 
     def do_a_dance(self):
         self.set_state('happy')
@@ -175,10 +166,6 @@ class DesktopAssistant(QWidget):
     def perform_random_walk(self):
         self.start_random_walk()
         return "Hemen bir keşfe çıkıyorum!"
-    # --- YENİ BİR KOMUT EKLEMEK İÇİN BURAYA YENİ BİR FONKSİYON TANIMLAYIN ---
-    # def ornek_yeni_komut(self):
-    #     print("Yeni komut çalıştı!")
-    #     return "Yeni komutumu başarıyla yerine getirdim!"
     
     def load_special_commands(self):
         try:
@@ -192,7 +179,6 @@ class DesktopAssistant(QWidget):
             return "Özel komutlar yüklenemedi."
 
     def load_or_create_config(self):
-        # ... Bu fonksiyon değişmedi ...
         config = configparser.ConfigParser()
         if not os.path.exists(self.config_path):
             config['Gemini'] = {'api_key': 'YOUR_GEMINI_API_KEY_HERE'}
@@ -202,7 +188,6 @@ class DesktopAssistant(QWidget):
         config.read(self.config_path)
         return config
 
-    # YENİ SİSTEM: handle_ai_response fonksiyonu DİNAMİK hale getirildi
     def handle_ai_response(self, response_text):
         if not response_text:
             self.set_state('idle'); return
@@ -217,7 +202,6 @@ class DesktopAssistant(QWidget):
             elif eylem == "get_weather": result_text = tools.get_weather(data.get("sehir"))
             elif eylem == "control_spotify": result_text = tools.control_spotify(data.get("komut"), self.config)
             
-            # --- YENİ DİNAMİK ÖZEL KOMUT SİSTEMİ ---
             elif eylem == "special_command":
                 command_key = data.get("komut")
                 # Haritada komut var mı diye kontrol et
@@ -237,15 +221,14 @@ class DesktopAssistant(QWidget):
                     print(f"AI GÖZÜ Kararı: Bekle. Düşünce: {data.get('dusunce')}")
                     if random.random() < 0.5: self.start_random_walk()
                     else: self.set_state('idle')
-                return # Hareket kararları konuşma balonu göstermez
+                return
 
-            if result_text: # Sadece boş olmayan yanıtları göster
+            if result_text:
                 self.show_speech_bubble(result_text)
 
         except (json.JSONDecodeError, AttributeError, ValueError):
             self.show_speech_bubble(response_text)
             
-    # --- GERİ KALAN TÜM FONKSİYONLAR DEĞİŞMEDEN AYNI KALIYOR ---
     def decide_new_action(self):
         if self.is_moving or self.speech_bubble.isVisible() or self.is_listening or not self.move_model: return
         print("Karaktere gözleri veriliyor... Ekran görüntüsü analiz ediliyor...")
@@ -412,4 +395,5 @@ class DesktopAssistant(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     assistant = DesktopAssistant()
+
     sys.exit(app.exec_())
