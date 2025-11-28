@@ -1,28 +1,52 @@
-# tools.py (DEĞİŞİKLİK YOK, KONTROL İÇİN)
-
 import requests
-from bs4 import BeautifulSoup
+import requests
+import configparser
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import pygetwindow as gw
+import os
+import difflib
 
 def search_and_summarize(query):
-    print(f"Web'de aranıyor: {query}")
+    print(f"Google'da aranıyor: {query}")
+    
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    
+    api_key = config.get('Google', 'api_key', fallback=None)
+    cse_id = config.get('Google', 'cse_id', fallback=None)
+    
+    if not api_key or not cse_id:
+        return "Hata: Google API anahtarları config.ini dosyasında eksik."
+
     try:
-        search_url = f"https://html.duckduckgo.com/html/?q={query}"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(search_url, headers=headers, timeout=5)
-        response.raise_for_status()
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            'q': query,
+            'key': api_key,
+            'cx': cse_id,
+            'num': 3,        # İlk 3 sonuç yeterli
+            'gl': 'tr',      # Bölge: Türkiye
+            'hl': 'tr'       # Dil: Türkçe
+        }
         
-        soup = BeautifulSoup(response.text, 'html.parser')
-        snippets = [p.get_text() for p in soup.find_all('a', class_='result__a')]
-        if not snippets:
-            return "Üzgünüm efendim, bu konuda bir şey bulamadım."
+        response = requests.get(url, params=params)
+        data = response.json()
         
-        summary = " ".join(snippets[:3])
-        return f"İnternette bulduklarıma göre: {summary}"
+        if 'items' not in data:
+            return "Google'da bununla ilgili bir sonuç bulamadım."
+            
+        raw_data = ""
+        for item in data['items']:
+            title = item.get('title', '')
+            snippet = item.get('snippet', '') # Google'ın özeti
+            raw_data += f"KAYNAK: {title} - {snippet}\n"
+            
+        return raw_data
+
     except Exception as e:
-        return f"İnternete bağlanırken bir sorun oluştu: {e}"
+        print(f"Google Arama hatası: {e}")
+        return None
 
 def get_weather(city):
     print(f"{city} için hava durumu alınıyor...")
@@ -81,8 +105,6 @@ def control_spotify(command, config):
     except Exception as e: return f"Spotify kontrol edilirken hata oluştu: {e}"
 
 def get_screen_layout():
-    # Bu fonksiyon artık hareket sistemi tarafından kullanılmıyor,
-    # ancak gelecekte başka bir amaçla gerekebilir diye burada kalabilir.
     windows_info = []
     try:
         all_windows = gw.getAllWindows()
@@ -104,3 +126,42 @@ def get_screen_layout():
     except Exception as e:
         print(f"Pencereler alınırken hata oluştu: {e}")
         return "Ekran düzeni bilgisi alınamadı."
+
+def open_application(app_name):
+    print(f"Uygulama aranıyor: {app_name}")
+    
+    # Windows Başlat Menüsü Yolları (Genel ve Kullanıcıya Özel)
+    start_menu_paths = [
+        os.path.join(os.environ["ProgramData"], "Microsoft", "Windows", "Start Menu", "Programs"),
+        os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs")
+    ]
+    
+    found_shortcuts = {}
+    
+    for path in start_menu_paths:
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                if file.endswith(".lnk"):
+                    shortcut_name = file.lower().replace(".lnk", "")
+                    full_path = os.path.join(root, file)
+                    found_shortcuts[shortcut_name] = full_path
+
+    search_query = app_name.lower()
+    if search_query in found_shortcuts:
+        try:
+            os.startfile(found_shortcuts[search_query])
+            return f"Tam isabet! {app_name} başlatılıyor."
+        except Exception as e:
+            return f"Uygulama bulundu ama açılamadı: {e}"
+
+    matches = [name for name in found_shortcuts.keys() if search_query in name]
+    
+    if matches:
+        best_match = matches[0] 
+        try:
+            os.startfile(found_shortcuts[best_match])
+            return f"Bunu mu kastettiniz: '{best_match}'? Başlatıyorum."
+        except Exception as e:
+            return f"Hata: {e}"
+            
+    return f"Üzgünüm, '{app_name}' adında veya buna benzer bir uygulama Başlat menüsünde bulunamadı."
