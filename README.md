@@ -9,15 +9,20 @@ An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*.
 
 ## ✨ Features
 
-*   **Visual Awareness**: Powered by Gemini 2.5 Flash, Rem can "see" your screen, identify icons or windows, and decide to move towards them.
+*   **🧠 Selective Long-Term Memory**: Rem remembers important details about you (like your name, favorite color, or deadlines) and saves them to `memory.json`. She intelligently decides what to remember based on your relationship and the context, filtering out trivial chatter.
+*   **👀 Dual-Core AI Vision**: Powered by **Gemini 2.5 Flash**, Rem has a dedicated "Vision Brain". She takes snapshots of your screen to identify icons, window corners, or the taskbar, and intelligently decides where to sit or walk—no more random wandering!
+*   **🚀 Smart App Launcher**: Just say "Open [App Name]". Rem scans your Windows Start Menu shortcuts to find the correct application, even if you don't know the exact `.exe` name (e.g., finding "Honkai Impact" when the file is `launcher.exe`).
+*   **🖱️ Interactive Physics**: Rem is not just a static image.
+    *   **Drag & Drop**: Pick her up with your mouse! She will grab your cursor (`climb` animation).
+    *   **Gravity**: Release her, and she will fall (`fall` animation) and land gracefully (`land` animation) on the taskbar or window.
+    *   **Eye Contact**: When idle, she follows your mouse cursor with her eyes.
+*   **🔍 Smart Web Search (RAG)**: Using the **Google Custom Search API**, Rem researches your questions. She reads the search results silently, filters out irrelevant data (like football scores when asking for history), and synthesizes a direct, intelligent answer for you.
 *   **Voice Control**: Activate her by calling her wake word ("Rem" by default) and give commands in natural language.
-*   **Dynamically Extensible Commands**: Add new, complex skills by simply editing a JSON file, without touching the core Python code. The AI will learn the "recipe" and generate the necessary code on the fly.
 *   **Core Assistant Tools**:
     *   🎵 **Spotify Control**: Play, pause, and skip tracks.
-    *   🌦️ **Weather Information**: Get the current weather for any city.
-    *   🌐 **Web Search**: Ask questions and get summarized answers from the web.
-    *   💻 **Code Execution**: Ask her to perform system tasks by generating and running Python scripts securely.
-*   **Customizable**: Easily change the wake word, character animations, and more.
+    *   🌦️ **Weather Information**: Get the current weather for any city with accurate status descriptions.
+    *   💻 **Secure Code Execution**: Ask her to perform system tasks by generating Python scripts. She will always ask for your permission before running any code.
+*   **Customizable**: Easily change the wake word, character animations, and configuration via a GUI menu.
 
 ---
 
@@ -48,6 +53,10 @@ This is the simplest way to get started. You just need to download the pre-built
       client_id = YOUR_CLIENT_ID_HERE
       client_secret = YOUR_CLIENT_SECRET_HERE
       redirect_uri = http://localhost:8888/callback
+
+      [Google]
+      api_key = YOUR_GOOGLE_CLOUD_API_KEY
+      cse_id = YOUR_SEARCH_ENGINE_ID
       ```
 
 3.  **Add Your API Keys**
@@ -72,11 +81,11 @@ If you want to modify the code or run it directly with Python.
     ```
 
 3.  **Install Dependencies**
-    It's highly recommended to use a virtual environment.
+    It's highly recommended to use a virtual environment. Note: We now use the newer `google-genai` library.
     ```bash
     python -m venv venv
     venv\Scripts\activate
-    pip install google-generativeai pygame gtts pygetwindow pyautogui Pillow speechrecognition spotipy
+    pip install google-genai pygame gtts pyautogui Pillow SpeechRecognition spotipy requests PyQt5
     ```
 
 4.  **Configure API Keys**
@@ -92,13 +101,18 @@ If you want to modify the code or run it directly with Python.
 
 ## 🔧 Configuration (`config.ini`)
 
-To use the AI and Spotify features, you must get your own free API keys.
+To use the AI, Spotify, and Search features, you must get your own free API keys.
 
 #### ♊ Gemini API Key (for AI Brain)
 
 1.  Go to **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
 2.  Click the "**Create API key**" button.
-3.  Copy the generated API key and paste it into the `api_key` field in your `config.ini`.
+3.  Copy the generated API key and paste it into the `api_key` field under `[Gemini]`.
+
+#### 🔍 Google Search API (for Web Browsing)
+
+1.  **API Key:** Go to **[Google Cloud Console](https://console.cloud.google.com/apis/credentials)**, create a project, and create an API Key. Paste it into `api_key` under `[Google]`.
+2.  **Search Engine ID (CX):** Go to **[Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/create)**. Create a search engine that searches "The entire web". Copy the "Search engine ID" (CX) and paste it into `cse_id` under `[Google]`.
 
 #### 🎵 Spotify API (for Music Control)
 
