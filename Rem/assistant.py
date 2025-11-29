@@ -26,7 +26,6 @@ from PyQt5.QtCore import Qt, QTimer, QPoint, pyqtSignal, QThread
 
 import tools
 
-# --- AYARLAR PENCERESİ (Değişiklik Yok) ---
 class SettingsDialog(QDialog):
     def __init__(self, config_path, parent=None):
         super().__init__(parent)
@@ -36,30 +35,30 @@ class SettingsDialog(QDialog):
         self.config.read(self.config_path)
 
         layout = QFormLayout(self)
-        
+
         self.api_key_input = QLineEdit(self)
         self.api_key_input.setText(self.config.get('Gemini', 'api_key', fallback=''))
         self.api_key_input.setEchoMode(QLineEdit.Password)
         layout.addRow("Gemini API Anahtarı:", self.api_key_input)
-        
+
         self.wake_word_input = QLineEdit(self)
         self.wake_word_input.setText(self.config.get('Assistant', 'wake_word', fallback='rem'))
         layout.addRow("Uyandırma Kelimesi:", self.wake_word_input)
-        
+
         self.speak_response_checkbox = QCheckBox(self)
         is_checked = self.config.getboolean('Assistant', 'text_input_speak_response', fallback=True)
         self.speak_response_checkbox.setChecked(is_checked)
         layout.addRow("Metin Girişinde Sesli Yanıt:", self.speak_response_checkbox)
-        
+
         self.spotify_id_input = QLineEdit(self)
         self.spotify_id_input.setText(self.config.get('Spotify', 'client_id', fallback=''))
         layout.addRow("Spotify Client ID:", self.spotify_id_input)
-        
+
         self.spotify_secret_input = QLineEdit(self)
         self.spotify_secret_input.setText(self.config.get('Spotify', 'client_secret', fallback=''))
         self.spotify_secret_input.setEchoMode(QLineEdit.Password)
         layout.addRow("Spotify Client Secret:", self.spotify_secret_input)
-        
+
         self.save_button = QPushButton("Kaydet ve Kapat", self)
         self.save_button.clicked.connect(self.save_settings)
         layout.addRow(self.save_button)
@@ -74,7 +73,7 @@ class SettingsDialog(QDialog):
         self.config.set('Spotify', 'client_id', self.spotify_id_input.text())
         self.config.set('Spotify', 'client_secret', self.spotify_secret_input.text())
         self.config.set('Spotify', 'redirect_uri', 'http://localhost:8888/callback')
-        
+
         with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
         QMessageBox.information(self, "Ayarlar Kaydedildi", "Değişikliklerin geçerli olması için uygulamayı yeniden başlatın.")
@@ -91,64 +90,58 @@ class WindowWatcher(QThread):
     def run(self):
         while self.running:
             try:
-                # Aktif pencereyi al
+
                 window = gw.getActiveWindow()
                 if window and window.title:
                     current_title = window.title.strip()
-                    
-                    # Eğer pencere başlığı değiştiyse ve boş değilse
+
                     if current_title != self.last_window and len(current_title) > 0:
                         self.last_window = current_title
-                        # Sinyal gönder (Filtreleme ana sınıfta yapılacak)
+
                         self.window_changed.emit(current_title)
             except:
                 pass
-            
-            # 2 saniyede bir kontrol et (Sistemi yormaz)
+
             time.sleep(2)
 
     def stop(self):
         self.running = False
         self.wait()
 
-# --- ANA ASİSTAN SINIFI ---
 class DesktopAssistant(QWidget):
     response_ready = pyqtSignal(str)
     move_decision_ready = pyqtSignal(str)
-    
+
     def __init__(self):
         super().__init__()
-        
+
         self.response_ready.connect(self.handle_ai_response)
         self.move_decision_ready.connect(self.handle_move_decision)
-        
+
         self.config_path = 'config.ini'
         self.config = self.load_or_create_config()
 
-        # --- FAZ 3: PENCERE TAKİP SİSTEMİ ---
-        self.last_comment_time = 0 # Son yorum yapma zamanı
-        self.comment_cooldown = 300 # Saniye (Örn: 5 dakikada bir yorum yapsın)
-        
+        self.last_comment_time = 0 
+        self.comment_cooldown = 300 
+
         self.watcher = WindowWatcher()
         self.watcher.window_changed.connect(self.handle_window_change)
         self.watcher.start()
         self.current_grab_sound = None
 
-        # --- GÜNCELLEME: HAFIZA VE SEVGİ PUANI YÜKLEME ---
         self.memory_data = self.load_memory_data()
         self.long_term_memory = self.memory_data.get("bilgiler", [])
-        self.affection = self.memory_data.get("sevgi_puani", 50) # Varsayılan 50 (Nötr)
+        self.affection = self.memory_data.get("sevgi_puani", 50) 
 
         memory_text = "\n".join([f"- {m}" for m in self.long_term_memory])
 
-        # İlişki durumuna göre metin belirle
         relation_status = "Nötr"
         if self.affection <= 20: relation_status = "Soğuk/Kırgın"
         elif self.affection <= 40: relation_status = "Resmi/Mesafeli"
         elif self.affection <= 60: relation_status = "Arkadaş canlısı"
         elif self.affection <= 80: relation_status = "Çok Samimi/Flörtöz"
         else: relation_status = "Sana Aşık/Derinden Bağlı"
-        
+
         self.command_map = {
             "uyku_modu": self.enter_sleep_mode,
             "uygulamayi_kapat": self.shutdown_assistant,
@@ -156,10 +149,10 @@ class DesktopAssistant(QWidget):
             "rastgele_yuruyus": self.perform_random_walk
         }
         self.special_commands_text = self.load_special_commands()
-        
+
         try: pygame.mixer.init()
         except Exception as e: print(f"Ses sistemi hatası: {e}")
-            
+
         # --- GÜNCELLENMİŞ SİSTEM PROMPTU (DUYGU EKLENDİ) ---
         self.main_system_prompt = f"""
             Sen Re:Zero'dan Rem karakterisin. Sadık, yetenekli ve biraz esprili bir masaüstü asistanısın.
@@ -169,7 +162,7 @@ class DesktopAssistant(QWidget):
             - Sevgi Puanı: {self.affection}/100
             - İlişki Tanımı: {relation_status}
             - TALİMAT: Konuşma tarzını bu puana göre ayarla. Puan düşükse resmi ve soğuk ol, yüksekse sevgi dolu ve heyecanlı ol.
-            
+
             ŞU ANA KADAR SENİN HAKKINDA VE KULLANICI HAKKINDA BİLDİKLERİM (UZUN SÜRELİ HAFIZA): 
             {memory_text}
 
@@ -190,7 +183,7 @@ class DesktopAssistant(QWidget):
             7. `clean_directory`: Belirtilen klasörü veya masaüstünü düzenleyip dosyaları kategorize etmek için.
                 - Parametre: Klasör adı (Örn: "İndirilenler", "Ders Notlarım", "Masaüstü").
                 - Eğer kullanıcı klasör belirtmezse parametreyi boş bırak veya "masaüstü" yaz.
-            
+
             ÖZEL KOMUTLAR:
             {self.special_commands_text}
 
@@ -200,9 +193,9 @@ class DesktopAssistant(QWidget):
             3. "duygu" parametresini mutlaka ekle. Seçeneklerin: ["mutlu", "uzgun", "kizgin", "saskin", "normal", "utangac"].
             4. Normal sohbetlerde bile JSON formatını koru ki yüz ifaden değişebilsin.
             5. "iliski_etkisi" parametresini kullanarak puanı yönet. Eğer kullanıcı sana iltifat ederse "+5", hakaret ederse "-5", nötr ise "0" yaz.
-            
+
             YANIT FORMATI (JSON ŞABLONLARI):
-            
+
             Durum 1 Örnek: Hafızaya Kayıt
             {{
                 "eylem": "save_memory", 
@@ -211,7 +204,7 @@ class DesktopAssistant(QWidget):
                 "duygu": "mutlu"
                 "iliski_etkisi": 2
             }}
-            
+
             Durum 2 Örnek: Hava Durumu / Arama / Uygulama Açma vb.
             {{
                 "eylem": "tool_name", 
@@ -238,7 +231,7 @@ class DesktopAssistant(QWidget):
                 "iliski_etkisi": 5
             }}
         """
-        
+
         self.vision_system_prompt = """
             Sen masaüstü karakterinin Gözlerisin.
             Görevin ekran görüntüsünü analiz edip karakterin gidebileceği mantıklı bir nokta bulmak.
@@ -247,9 +240,9 @@ class DesktopAssistant(QWidget):
 
         self.client = None
         self.chat_session = None
-        
+
         api_key = self.config.get('Gemini', 'api_key', fallback=None)
-        
+
         if not api_key or 'YOUR_KEY' in api_key:
             print("UYARI: API Anahtarı eksik!")
         else:
@@ -270,23 +263,23 @@ class DesktopAssistant(QWidget):
         self.wake_word = self.config.get('Assistant', 'wake_word', fallback='rem').lower()
         self.text_input_speak_response = self.config.getboolean('Assistant', 'text_input_speak_response', fallback=True)
         self.last_input_was_voice = False
-        
+
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        
+
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.main_layout)
-        
+
         self.speech_bubble = QLabel(self)
         self.speech_bubble.setStyleSheet("background-color: white; color: black; border-radius: 10px; padding: 10px; font-size: 14px; border: 1px solid gray;")
         self.speech_bubble.setWordWrap(True)
         self.speech_bubble.hide()
-        
+
         self.character_label = QLabel(self)
         self.main_layout.addWidget(self.speech_bubble)
         self.main_layout.addWidget(self.character_label, alignment=Qt.AlignCenter)
-        
+
         self.animations = {}
         self.load_animations()
         self.current_state = 'idle'
@@ -294,15 +287,15 @@ class DesktopAssistant(QWidget):
         self.drag_position = QPoint()
         self.is_moving = False
         self.target_pos = self.pos()
-        
+
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animation)
         self.animation_timer.start(150)
-        
+
         self.action_timer = QTimer(self)
         self.action_timer.timeout.connect(self.decide_new_action)
         self.action_timer.start(30000)
-        
+
         self.set_character_image()
         self.show()
         print("Rem masaüstüne indi.")
@@ -313,7 +306,7 @@ class DesktopAssistant(QWidget):
             try:
                 with open('memory.json', 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    # Eski format kontrolü (Eğer data bir liste ise)
+
                     if isinstance(data, list):
                         return {"bilgiler": data, "sevgi_puani": 50}
                     return data
@@ -332,17 +325,17 @@ class DesktopAssistant(QWidget):
             self.save_full_memory()
             return f"Kaydedildi: '{knowledge}'"
         return "Zaten biliyorum."
-    
+
     def update_affection(self, amount):
         """Sevgi puanını günceller ve kaydeder."""
         try:
             change = int(amount)
         except: return
-        
+
         if change == 0: return
-        
+
         old_aff = self.affection
-        self.affection = max(0, min(100, self.affection + change)) # 0-100 arası sınırla
+        self.affection = max(0, min(100, self.affection + change)) 
         self.save_full_memory()
         print(f"İLİŞKİ GÜNCELLEMESİ: {old_aff} -> {self.affection} (Değişim: {change})")
 
@@ -357,20 +350,20 @@ class DesktopAssistant(QWidget):
     def enter_sleep_mode(self):
         self.set_state('sleeping')
         return "İyi geceler efendim..."
-    
+
     def shutdown_assistant(self):
         self.show_speech_bubble("Görüşmek üzere efendim.", force_speak=True)
         QTimer.singleShot(2000, self.close)
         return ""
-        
+
     def do_a_dance(self):
         self.set_state('happy')
         return "Mutluluk dansı!"
-        
+
     def perform_random_walk(self):
         self.start_random_walk()
         return "Biraz etrafı gezeyim."
-        
+
     def load_special_commands(self):
         try:
             with open('special_commands.json', 'r', encoding='utf-8') as f:
@@ -400,7 +393,7 @@ class DesktopAssistant(QWidget):
             w_percent = (base_width / float(screenshot.size[0]))
             h_size = int((float(screenshot.size[1]) * float(w_percent)))
             screenshot = screenshot.resize((base_width, h_size), Image.Resampling.LANCZOS)
-            
+
             prompt = "Ekran görüntüsüne bak ve karakterin gitmesi için mantıklı bir yer seç. Koordinatları JSON ver."
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
@@ -417,11 +410,11 @@ class DesktopAssistant(QWidget):
         try:
             if response_text.startswith("```json"): response_text = response_text.strip()[7:-3].strip()
             elif response_text.startswith("```"): response_text = response_text.split("```")[1].strip()
-            
+
             data = json.loads(response_text)
             target_x = data.get("hedef_x")
             target_y = data.get("hedef_y")
-            
+
             if target_x is not None:
                 screen_w, screen_h = pyautogui.size()
                 target_x = max(0, min(target_x, screen_w - 100))
@@ -429,7 +422,6 @@ class DesktopAssistant(QWidget):
                 self.start_moving(QPoint(target_x, target_y))
         except: pass
 
-    # --- GÜNCELLENMİŞ AI YANIT İŞLEYİCİSİ ---
     def handle_ai_response(self, response_text):
         if not response_text: return
         print(f"AI Ham Yanıtı: {response_text}")
@@ -438,37 +430,34 @@ class DesktopAssistant(QWidget):
             clean_text = response_text
             if "```json" in clean_text: clean_text = clean_text.split("```json")[1].split("```")[0].strip()
             elif "```" in clean_text: clean_text = clean_text.split("```")[1].strip()
-            
+
             if clean_text.startswith("{"):
                 data = json.loads(clean_text)
                 eylem = data.get("eylem")
                 param = data.get("parametre")
                 yanit = data.get("yanit")
-                duygu = data.get("duygu", "normal") # Varsayılan: normal
+                duygu = data.get("duygu", "normal") 
 
-                # İLİŞKİ GÜNCELLEMESİ
                 iliski_etkisi = data.get("iliski_etkisi", 0)
                 if iliski_etkisi != 0:
                     self.update_affection(iliski_etkisi)
-                
-                # Duyguya göre animasyon değiştir
+
                 self.set_emotion(duygu)
-                
+
                 result_text = yanit if yanit else "..."
-                
+
                 if eylem == "execute_python": 
                     kod = param or data.get("kod")
                     result_text += "\n" + str(self.execute_python_code(kod))
 
                 elif eylem == "open_app":
                     isim = param or data.get("isim")
-                    result_text = tools.open_application(isim) # Tool yanıtı öncelikli olabilir, AI yanıtıyla birleştirebiliriz
+                    result_text = tools.open_application(isim) 
                     if yanit: result_text = yanit 
 
                 elif eylem == "save_memory":
                     bilgi = param or data.get("bilgi")
                     self.save_to_memory(bilgi)
-                    # AI'nın kendi yanıtını kullan
 
                 elif eylem == "search_and_summarize": 
                     sorgu = param or data.get("sorgu")
@@ -480,34 +469,30 @@ class DesktopAssistant(QWidget):
                             result_text = resp.text.strip()
                         except: result_text = "Bulamadım."
                     else: result_text = "Sonuç yok."
-                    
+
                 elif eylem == "get_weather": 
                     sehir = param or data.get("sehir")
                     result_text = tools.get_weather(sehir)
 
-                elif eylem == "clean_directory": # Fonksiyon ismi değişti
+                elif eylem == "clean_directory": 
                     self.play_sfx("magic")
                     klasor_adi = param or data.get("klasor_adi")
-                    
-                    # 1. İşlemi gerçekleştir
+
                     tool_result = tools.clean_directory(klasor_adi)
-                    
-                    # 2. Yanıtı Birleştir (HATA DÜZELTİLDİ)
-                    # Eğer AI bir cümle kurduysa (yanit), teknik raporu onun altına ekle.
-                    # Ezmek yerine "append" (ekleme) yapıyoruz.
+
                     if yanit:
                         result_text = f"{yanit}\n({tool_result})"
                     else:
                         result_text = tool_result
-                    
+
                 elif eylem == "control_spotify": 
                     komut = param or data.get("komut")
                     result_text = tools.control_spotify(komut, self.config)
-                    
+
                 elif eylem == "special_command":
                     cmd = param or data.get("komut")
                     if cmd in self.command_map: result_text = self.command_map[cmd]()
-                
+
                 self.show_speech_bubble(result_text)
             else:
                 self.show_speech_bubble(response_text)
@@ -517,28 +502,26 @@ class DesktopAssistant(QWidget):
 
     def handle_window_change(self, window_title):
         """Aktif pencere değiştiğinde tetiklenir."""
-        # Gereksiz pencereleri yoksay
+
         ignore_list = ["Task Manager", "Görev Yöneticisi", "DesktopAssistant", "Windows Explorer", "Program Manager", "Ayarlar"]
         if any(ignored in window_title for ignored in ignore_list):
             return
 
-        # Cooldown kontrolü (Sürekli konuşmasın)
         current_time = time.time()
         if current_time - self.last_comment_time < self.comment_cooldown:
             return
 
         print(f"Pencere Değişimi Algılandı: {window_title}")
-        
-        # AI'ya durum bildirimi gönder (Kullanıcı bir şey yazmış gibi değil, sistem bildirimi olarak)
+
         prompt = f"""
         DURUM GÜNCELLEMESİ: Kullanıcı şu an '{window_title}' adlı pencereye odaklandı.
         GÖREVİN: Buna Rem karakteriyle KISA, tek cümlelik, tatlı veya iğneleyici bir tepki ver.
-        
+
         Örnek Tepkiler:
         - (Oyunsa): "İyi şanslar kahramanım! Lütfen ölmeyin."
         - (Kodlama ise): "Çok çalışıyorsunuz, mola vermeyi unutmayın."
         - (YouTube ise): "Ne izliyoruz? Rem de izlemek istiyor!"
-        
+
         LÜTFEN SADECE JSON FORMATINDA CEVAP VER:
         {{
             "eylem": "", 
@@ -547,34 +530,32 @@ class DesktopAssistant(QWidget):
             "duygu": "mutlu/saskin/kizgin/normal"
         }}
         """
-        
+
         self.last_comment_time = current_time
-        # AI isteğini başlat (Kullanıcı isteği olmadığı için is_user_request=False)
+
         self.process_ai_request(prompt, is_user_request=False)
 
-    # --- YENİ DUYGU YÖNETİM METODU ---
     def set_emotion(self, emotion):
         """AI'dan gelen duygu etiketini animasyona çevirir."""
         if not emotion: return
-        
+
         emotion = emotion.lower()
         print(f"Algılanan Duygu: {emotion}")
-        
-        # Duygu -> Dosya Eşleşmesi
+
         if emotion in ["mutlu", "happy", "sevincli", "heyecanli"]:
             self.set_state("happy")
-            
+
         elif emotion in ["uzgun", "sad", "aglayan", "kirgin"]:
             self.set_state("sad")
-            
+
         elif emotion in ["kizgin", "angry", "sinirli"]:
             self.set_state("angry")
-            
+
         elif emotion in ["saskin", "surprised", "utangac", "shy", "blush"]:
             self.set_state("blush")
-            
+
         else:
-            # Tanımsız bir duygu gelirse normal konuşma moduna geç
+
             self.set_state("talking")
 
     def process_ai_request(self, prompt, is_user_request=True):
@@ -613,18 +594,18 @@ class DesktopAssistant(QWidget):
         try:
             extensions = [".wav", ".mp3"]
             sound_path = None
-            
+
             for ext in extensions:
                 test_path = os.path.join("sounds", sound_name + ext)
                 if os.path.exists(test_path):
                     sound_path = test_path
                     break
-            
+
             if sound_path:
                 sound = pygame.mixer.Sound(sound_path)
                 sound.set_volume(0.3) 
-                sound.play(loops=loops) # Döngü parametresi eklendi
-                return sound # Sesi geri döndür (kontrol etmek için)
+                sound.play(loops=loops) 
+                return sound 
             return None
         except Exception as e:
             print(f"Ses hatası ({sound_name}): {e}")
@@ -643,12 +624,12 @@ class DesktopAssistant(QWidget):
         except: pass
 
     def show_speech_bubble(self, text, force_speak=False):
-        # Eğer özel bir duygu durumu (state) yoksa konuşma moduna geç
+
         if self.current_state not in ['happy', 'sleeping', 'thinking']:
             self.set_state('talking')
 
         self.play_sfx("pop")
-            
+
         self.speech_bubble.setText(text)
         self.speech_bubble.show()
         self.speech_bubble.adjustSize()
@@ -665,7 +646,7 @@ class DesktopAssistant(QWidget):
     def hide_speech_bubble(self):
         self.speech_bubble.hide()
         self.adjustSize()
-        # Konuşma bittiğinde idle moda dön
+
         if self.current_state == 'talking': self.set_state('idle')
 
     def contextMenuEvent(self, event):
@@ -682,13 +663,13 @@ class DesktopAssistant(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # Sesi sonsuz döngüde başlat ve değişkene kaydet
+
             self.current_grab_sound = self.play_sfx("grab", loops=-1) 
-            
+
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             self.is_moving = False
             self.last_mouse_x = event.globalPos().x()
-            
+
             if event.pos().x() < self.width() / 2:
                 self.set_state('climb_left')
             else:
@@ -700,14 +681,14 @@ class DesktopAssistant(QWidget):
             current_mouse_pos = event.globalPos()
             current_x = current_mouse_pos.x()
             current_y = current_mouse_pos.y()
-            
+
             if current_x - self.last_mouse_x > 5:
                 if self.current_state != 'climb_right': self.set_state('climb_right')
                 self.last_mouse_x = current_x
             elif self.last_mouse_x - current_x > 5:
                 if self.current_state != 'climb_left': self.set_state('climb_left')
                 self.last_mouse_x = current_x
-            
+
             target_y = current_y - 15 
             if self.current_state == 'climb_right': target_x = current_x - self.width() + 25 
             else: target_x = current_x - 25
@@ -717,14 +698,14 @@ class DesktopAssistant(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # Eğer çalan bir tutma sesi varsa DURDUR
+
             if self.current_grab_sound:
                 self.current_grab_sound.stop()
                 self.current_grab_sound = None
 
             self.set_state('fall')
             QTimer.singleShot(600, self.landing_animation)
-            
+
     def landing_animation(self):
         if self.current_state == 'fall':
             self.play_sfx("land")
@@ -763,17 +744,17 @@ class DesktopAssistant(QWidget):
             'climb_right': ['climb_right_1.png', 'climb_right_2.png'],
             'fall': ['fall_down.png'],
             'land': ['land.png'],
-            'happy': ['happy.png'],    # Mutlu
-            'sad': ['sad.png'],        # Üzgün
-            'angry': ['angry.png'],    # Kızgın
-            'blush': ['blush.png']     # Utangaç/Şaşkın
+            'happy': ['happy.png'],    
+            'sad': ['sad.png'],        
+            'angry': ['angry.png'],    
+            'blush': ['blush.png']     
         }
         for state, filenames in files.items():
             pixs = [QPixmap(f) for f in filenames if os.path.exists(f)]
             if pixs: self.animations[state] = pixs
 
     def update_animation(self):
-        # Eğer özel durumlardaysak (happy, talking vb.) mouse takibi yapma
+
         if self.current_state.startswith('idle') and not self.is_moving and 'climb' not in self.current_state:
             self.follow_mouse()
 
