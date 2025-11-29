@@ -1,0 +1,9 @@
+{
+  "uyku_modu": "Karakteri uyku animasyonuna (sleeping.png) geçirir ve bir süre o durumda kalmasını sağlar. Kullanıcı 'uyu', 'yat', 'uyku vakti' gibi şeyler söylediğinde kullanılır.",
+  "uygulamayi_kapat": "Masaüstü asistanı uygulamasını tamamen kapatır. Kullanıcı 'kapan', 'çıkış yap', 'git artık' gibi şeyler söylediğinde kullanılır.",
+  "dans_et": "Karakterin yerinde mutlu bir şekilde dans etmesini (happy/talking.png) sağlar.",
+  "rastgele_yuruyus": "Karakterin ekranda rastgele bir noktaya doğru bir keşif yürüyüşü başlatmasını tetikler.",
+  "acilis": "Karakter masaüstünde duran rastgele bir klasörü açar.",
+  "odak_modu_baslat": "Kullanıcı ders çalışmak, iş yapmak veya odaklanmak istediğinde bu komutu çalıştır. Bu modda Rem, YouTube veya oyunlar açıldığında kullanıcıya kızar ve ekranı bloklar.",
+  "odak_modu_bitir": "Kullanıcı çalışmayı bitirdiğinde, mola vermek istediğinde veya odak modundan çıkmak istediğinde kullanılır."
+}

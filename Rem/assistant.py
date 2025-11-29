@@ -1,13 +1,15 @@
 import sys
 import os
-import random
-import threading
 import json
 import io
-import configparser
 import time
+import random
+import psutil
+import threading
 import subprocess
+import configparser
 import pygetwindow as gw
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -108,6 +110,25 @@ class WindowWatcher(QThread):
         self.running = False
         self.wait()
 
+class SystemMonitor(QThread):
+    alert_trigger = pyqtSignal(str)
+
+    def run(self):
+        while True:
+            try:
+                cpu = psutil.cpu_percent(interval=1)
+                ram = psutil.virtual_memory().percent
+
+                if cpu > 90:
+                    self.alert_trigger.emit(f"İşlemci yanıyor efendim! Kullanım: %{cpu}")
+                    time.sleep(30) 
+                elif ram > 90:
+                    self.alert_trigger.emit(f"RAM doldu taşıyor! Kullanım: %{ram}")
+                    time.sleep(30)
+
+            except: pass
+            time.sleep(2) 
+
 class DesktopAssistant(QWidget):
     response_ready = pyqtSignal(str)
     move_decision_ready = pyqtSignal(str)
@@ -117,6 +138,8 @@ class DesktopAssistant(QWidget):
 
         self.response_ready.connect(self.handle_ai_response)
         self.move_decision_ready.connect(self.handle_move_decision)
+        self.is_focus_mode = False
+        self.is_night_mode = False 
 
         self.config_path = 'config.ini'
         self.config = self.load_or_create_config()
@@ -127,6 +150,9 @@ class DesktopAssistant(QWidget):
         self.watcher = WindowWatcher()
         self.watcher.window_changed.connect(self.handle_window_change)
         self.watcher.start()
+        self.sys_monitor = SystemMonitor()
+        self.sys_monitor.alert_trigger.connect(self.handle_system_alert)
+        self.sys_monitor.start()
         self.current_grab_sound = None
 
         self.memory_data = self.load_memory_data()
@@ -146,7 +172,9 @@ class DesktopAssistant(QWidget):
             "uyku_modu": self.enter_sleep_mode,
             "uygulamayi_kapat": self.shutdown_assistant,
             "dans_et": self.do_a_dance,
-            "rastgele_yuruyus": self.perform_random_walk
+            "rastgele_yuruyus": self.perform_random_walk,
+            "odak_modu_baslat": self.start_focus_mode,
+            "odak_modu_bitir": self.stop_focus_mode
         }
         self.special_commands_text = self.load_special_commands()
 
@@ -297,6 +325,7 @@ class DesktopAssistant(QWidget):
         self.action_timer.start(30000)
 
         self.set_character_image()
+        self.setAcceptDrops(True)
         self.show()
         print("Rem masaüstüne indi.")
 
@@ -382,6 +411,8 @@ class DesktopAssistant(QWidget):
         return config
 
     def decide_new_action(self):
+        self.check_biological_clock()
+
         if self.is_moving or self.speech_bubble.isVisible() or self.is_listening or not self.client:
             return
         threading.Thread(target=self._capture_and_analyze_screen, daemon=True).start()
@@ -501,11 +532,20 @@ class DesktopAssistant(QWidget):
             self.show_speech_bubble(response_text)
 
     def handle_window_change(self, window_title):
-        """Aktif pencere değiştiğinde tetiklenir."""
 
         ignore_list = ["Task Manager", "Görev Yöneticisi", "DesktopAssistant", "Windows Explorer", "Program Manager", "Ayarlar"]
         if any(ignored in window_title for ignored in ignore_list):
             return
+
+        if self.is_focus_mode:
+
+            forbidden = ["youtube", "netflix", "twitch", "steam", "valorant", "league", "minecraft", "instagram", "twitter", "x"]
+
+            title_lower = window_title.lower()
+            if any(bad_app in title_lower for bad_app in forbidden):
+
+                self.punish_distraction(window_title)
+                return 
 
         current_time = time.time()
         if current_time - self.last_comment_time < self.comment_cooldown:
@@ -619,6 +659,12 @@ class DesktopAssistant(QWidget):
             tts.write_to_fp(audio_stream)
             audio_stream.seek(0)
             pygame.mixer.music.load(audio_stream, 'mp3')
+
+            if self.is_night_mode:
+                pygame.mixer.music.set_volume(0.2) 
+            else:
+                pygame.mixer.music.set_volume(1.0) 
+
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy(): pygame.time.Clock().tick(10)
         except: pass
@@ -706,6 +752,64 @@ class DesktopAssistant(QWidget):
             self.set_state('fall')
             QTimer.singleShot(600, self.landing_animation)
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        for f in files:
+
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.bmp')):
+                self.process_dropped_image(f)
+                break 
+            else:
+                self.show_speech_bubble("Efendim, bu dosya türünü anlayamıyorum...", force_speak=True)
+
+    def process_dropped_image(self, file_path):
+        self.show_speech_bubble("Bu nedir efendim? İnceliyorum...", force_speak=False)
+        self.set_state('thinking')
+        threading.Thread(target=self._analyze_gift_thread, args=(file_path,), daemon=True).start()
+
+    def _analyze_gift_thread(self, file_path):
+        if not self.client: return
+
+        try:
+
+            img = Image.open(file_path)
+
+            gift_prompt = """
+            Sen Rem'sin. Kullanıcı sana bir resim dosyası sürükleyip "Hediye" olarak verdi.
+            Görevin:
+            1. Resmin ne olduğunu tanımla.
+            2. Rem karakterine uygun bir tepki ver.
+               - Eğer tatlı bir şeyse (çiçek, kedi, tatlı, Rem'in seveceği bir şey vb.) -> Mutlu ol (+ Sevgi Puanı).
+               - Eğer korkunç veya iğrenç bir şeyse -> Kork veya Kız (- Sevgi Puanı).
+               - Eğer anlamsızsa -> Şaşır (Nötr).
+
+            YANIT FORMATI (KESİNLİKLE JSON):
+            {
+                "eylem": "gift_reaction",
+                "parametre": "",
+                "yanit": "Rem'in o anki tepkisi.",
+                "duygu": "mutlu/saskin/kizgin/utangac",
+                "iliski_etkisi": 10 (veya -10, duruma göre tamsayı)
+            }
+            """
+
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[gift_prompt, img]
+            )
+
+            self.response_ready.emit(response.text.strip())
+
+        except Exception as e:
+            print(f"Hediye analiz hatası: {e}")
+            self.response_ready.emit("Bu hediyeyi tam anlayamadım efendim.")
+
     def landing_animation(self):
         if self.current_state == 'fall':
             self.play_sfx("land")
@@ -791,6 +895,61 @@ class DesktopAssistant(QWidget):
     def set_state(self, state):
         if self.current_state != state: self.current_state = state; self.animation_frame = 0; self.update_animation()
     def set_character_image(self): self.update_animation()
+
+    def handle_system_alert(self, message):
+
+        if self.current_state != 'angry':
+            self.play_sfx("warning") 
+            self.set_state('angry') 
+
+        self.show_speech_bubble(f"⚠️ DİKKAT: {message}", force_speak=False)
+
+    def start_focus_mode(self):
+        self.is_focus_mode = True
+        self.set_state('talking')
+        return "Anlaşıldı efendim. Tüm dikkat dağıtıcı unsurları engelleyeceğim. İyi çalışmalar!"
+
+    def stop_focus_mode(self):
+        self.is_focus_mode = False
+        self.set_state('happy')
+        return "Çok sıkı çalıştınız efendim, şimdi dinlenme zamanı!"
+
+    def punish_distraction(self, app_name):
+
+        screen_geo = QApplication.primaryScreen().geometry()
+        center_x = (screen_geo.width() - self.width()) // 2
+        center_y = (screen_geo.height() - self.height()) // 2
+
+        self.move(center_x, center_y)
+        self.set_state('angry') 
+        self.play_sfx("warning")
+
+        self.show_speech_bubble(f"EFENDİM! Çalışma saatindeyiz! '{app_name}' kapatılmalı!", force_speak=False)
+
+    def check_biological_clock(self):
+        current_hour = datetime.now().hour
+
+        if 2 <= current_hour < 7:
+            if not self.is_night_mode:
+                self.start_night_mode()
+
+            elif random.random() < 0.1: 
+                self.show_speech_bubble("Efendim... Hala uyumadınız mı? Gözleriniz bozulacak...", force_speak=True)
+                self.set_state('sleeping') 
+
+        else:
+            if self.is_night_mode:
+                self.stop_night_mode()
+
+    def start_night_mode(self):
+        self.is_night_mode = True
+        self.show_speech_bubble("Esneme... Saat çok geç oldu efendim. Rem biraz sessiz moda geçiyor.", force_speak=True)
+        self.set_state('sleeping')
+
+    def stop_night_mode(self):
+        self.is_night_mode = False
+        self.show_speech_bubble("Günaydın efendim! Rem göreve hazır!", force_speak=True)
+        self.set_state('happy')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
