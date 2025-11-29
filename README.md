@@ -7,8 +7,20 @@ An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*.
 
 ---
 
-## ✨ Features (v3.0 Updated)
+## ✨ Features (v3.5 Updated)
 
+*   **🎁 Drag & Drop Gifting (NEW!)**: Rem can now physically interact with files you give her!
+    *   **Vision Analysis**: Drag an image file onto Rem. Using **Gemini Vision**, she analyzes what it is.
+    *   **Reaction System**: Give her flowers or sweets to boost your **Affection Score**. Be careful—giving her scary images might lower it!
+*   **👹 Oni Mode (System Sentinel) (NEW!)**: Rem protects your PC's health as well as yours.
+    *   **Resource Monitoring**: She monitors your CPU and RAM usage in real-time.
+    *   **Warning System**: If your system overheats or memory overflows (>90%), she automatically transforms into her **Oni form** (Angry State) to warn you immediately.
+*   **🛡️ Focus Guardian (NEW!)**: Need to study or work?
+    *   **Strict Mode**: Tell Rem to "Start Focus Mode". She will watch your active windows.
+    *   **Distraction Punishment**: If you try to open distractions (YouTube, Netflix, Games) while working, Rem will **teleport to the center of your screen**, scold you, and demand you close them.
+*   **🌙 Biological Clock (NEW!)**: Rem follows a realistic day/night cycle.
+    *   **Night Mode**: Late at night (02:00 - 07:00), she gets sleepy, changes to her pajama/sleeping animation, and automatically lowers her voice to a whisper to not disturb you.
+    *   **Health Check**: She will occasionally remind you to go to sleep if you stay up too late.
 *   **❤️ Dynamic Relationship System**: Rem is not a static bot; she remembers how you treat her.
     *   **Affection Score**: She maintains a hidden "Affection Level" (0-100) in `memory.json`.
     *   **Emotional Response**: Her tone changes from "Cold/Formal" to "Lovestruck/Deeply Attached" based on your interactions.
@@ -92,11 +104,11 @@ If you want to modify the code or run it directly with Python.
     ```
 
 3.  **Install Dependencies**
-    It's highly recommended to use a virtual environment. Note: We now use the newer `google-genai` library.
+    It's highly recommended to use a virtual environment. Note: We now use `psutil` for system monitoring.
     ```bash
     python -m venv venv
     venv\Scripts\activate
-    pip install google-genai pygame gtts pyautogui Pillow SpeechRecognition spotipy requests PyQt5 pygetwindow
+    pip install google-genai pygame gtts pyautogui Pillow SpeechRecognition spotipy requests PyQt5 pygetwindow psutil
     ```
 
 4.  **Configure API Keys**
