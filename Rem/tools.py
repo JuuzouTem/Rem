@@ -1,3 +1,4 @@
+import shutil
 import requests
 import requests
 import configparser
@@ -165,3 +166,108 @@ def open_application(app_name):
             return f"Hata: {e}"
             
     return f"Üzgünüm, '{app_name}' adında veya buna benzer bir uygulama Başlat menüsünde bulunamadı."
+
+def clean_directory(folder_name=None):
+    """Verilen isme sahip klasörü bulur ve dosyaları kategorize eder."""
+    try:
+        user_path = os.path.expanduser("~")
+        desktop_path = os.path.join(user_path, "Desktop")
+        target_path = None
+
+        # 1. Hedef Klasörü Bulma Mantığı
+        if not folder_name or "masaüstü" in folder_name.lower() or "desktop" in folder_name.lower():
+            target_path = desktop_path
+            folder_name = "Masaüstü"
+        else:
+            # Önce standart Windows klasörlerine bak (İndirilenler, Belgeler vb.)
+            common_paths = [
+                os.path.join(user_path, "Downloads"),
+                os.path.join(user_path, "Documents"),
+                os.path.join(user_path, "Pictures"),
+                os.path.join(user_path, "Music"),
+                os.path.join(user_path, "Videos"),
+                os.path.join(desktop_path, folder_name) # Masaüstündeki bir klasör mü?
+            ]
+            
+            # İngilizce/Türkçe çeviri haritası (Genel kullanım için)
+            name_map = {
+                "indirilenler": "Downloads",
+                "belgeler": "Documents",
+                "belgelerim": "Documents",
+                "resimler": "Pictures",
+                "muzikler": "Music",
+                "videolar": "Videos"
+            }
+            
+            # Haritadan kontrol et
+            clean_name = folder_name.lower()
+            if clean_name in name_map:
+                potential_path = os.path.join(user_path, name_map[clean_name])
+                if os.path.exists(potential_path):
+                    target_path = potential_path
+
+            # Bulunamadıysa genel arama yap
+            if not target_path:
+                for path in common_paths:
+                    if os.path.exists(path) and os.path.basename(path).lower() == clean_name:
+                        target_path = path
+                        break
+                
+                # Hala yoksa Masaüstünde o isimde klasör var mı diye bak
+                if not target_path:
+                    check_desktop = os.path.join(desktop_path, folder_name)
+                    if os.path.exists(check_desktop):
+                        target_path = check_desktop
+
+        if not target_path or not os.path.exists(target_path):
+            return f"Üzgünüm efendim, '{folder_name}' adında bir klasör bulamadım."
+
+        # 2. Temizlik İşlemi (Aynı Mantık)
+        folders = {
+            "Rem_Resimler": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp"],
+            "Rem_Belgeler": [".pdf", ".docx", ".doc", ".txt", ".xlsx", ".pptx", ".csv"],
+            "Rem_Arsivler": [".zip", ".rar", ".7z", ".tar", ".gz"],
+            "Rem_Videolar": [".mp4", ".mkv", ".avi", ".mov"],
+            "Rem_Sesler": [".mp3", ".wav", ".flac", ".opus"],
+            "Rem_Uygulamalar": [".exe", ".msi"]
+        }
+        
+        moved_count = 0
+        details = []
+
+        files = os.listdir(target_path)
+        
+        for filename in files:
+            file_path = os.path.join(target_path, filename)
+            
+            # Klasörleri ve Rem'in oluşturduklarını atla
+            if os.path.isdir(file_path) or filename.endswith(".lnk") or "Rem_" in filename:
+                continue
+                
+            file_ext = os.path.splitext(filename)[1].lower()
+            
+            for cat_name, extensions in folders.items():
+                if file_ext in extensions:
+                    cat_folder = os.path.join(target_path, cat_name)
+                    if not os.path.exists(cat_folder):
+                        os.makedirs(cat_folder)
+                        
+                    try:
+                        shutil.move(file_path, os.path.join(cat_folder, filename))
+                        moved_count += 1
+                        if moved_count <= 2: details.append(filename)
+                    except: pass
+                    break
+        
+        if moved_count == 0:
+            return f"'{folder_name}' klasörü zaten düzenli görünüyor efendim."
+        
+        return f"'{folder_name}' klasörü temizlendi! {moved_count} dosya düzenlendi."
+
+    except Exception as e:
+        return f"Klasörü düzenlerken hata oluştu: {e}"
+        
+        return f"Masaüstü temizliği tamamlandı! Toplam {moved_count} dosya (Örn: {', '.join(details)}...) ilgili klasörlere yerleştirildi."
+        
+    except Exception as e:
+        return f"Temizlik sırasında bir sakarlık yaptım sanırım: {e}"
