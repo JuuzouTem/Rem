@@ -7,22 +7,33 @@ An interactive, AI-powered desktop assistant in the style of Rem from *Re:Zero*.
 
 ---
 
-## ✨ Features
+## ✨ Features (v3.0 Updated)
 
-*   **🧠 Selective Long-Term Memory**: Rem remembers important details about you (like your name, favorite color, or deadlines) and saves them to `memory.json`. She intelligently decides what to remember based on your relationship and the context, filtering out trivial chatter.
-*   **👀 Dual-Core AI Vision**: Powered by **Gemini 2.5 Flash**, Rem has a dedicated "Vision Brain". She takes snapshots of your screen to identify icons, window corners, or the taskbar, and intelligently decides where to sit or walk—no more random wandering!
-*   **🚀 Smart App Launcher**: Just say "Open [App Name]". Rem scans your Windows Start Menu shortcuts to find the correct application, even if you don't know the exact `.exe` name (e.g., finding "Honkai Impact" when the file is `launcher.exe`).
+*   **❤️ Dynamic Relationship System**: Rem is not a static bot; she remembers how you treat her.
+    *   **Affection Score**: She maintains a hidden "Affection Level" (0-100) in `memory.json`.
+    *   **Emotional Response**: Her tone changes from "Cold/Formal" to "Lovestruck/Deeply Attached" based on your interactions.
+    *   **Sentiment Engine**: She understands emotions. If you compliment her, she gets happy (changes animation); if you are rude, she might get sad or angry.
+*   **🧹 Maid Mode (Auto-Cleanup)**: True to her character, Rem is a capable maid.
+    *   **Smart Organize**: Just say *"Rem, clean up my Desktop"* or *"Organize the Downloads folder"*.
+    *   She automatically sorts clutter into organized folders (e.g., `Rem_Images`, `Rem_Documents`, `Rem_Videos`).
+*   **👀 Context Awareness**: Rem watches over you while you work or play.
+    *   **Active Window Tracking**: She knows what you are doing (e.g., Coding in VS Code, Playing LoL, Watching YouTube).
+    *   **Spontaneous Comments**: She will occasionally pop up with a relevant comment (e.g., *"Good luck, hero!"* during a game or *"Don't work too hard!"* while coding), without you needing to ask.
+*   **🔊 Immersive Sound Effects (SFX)**: Rem now has a physical presence.
+    *   **Tactile Audio**: Hear a *rustle* when you pick her up, a *thud* when she lands, or a *pop* when she speaks.
+    *   **Looping Grab Sound**: The sound effects adapt dynamically to how long you hold her.
+*   **🧠 Selective Long-Term Memory**: Rem remembers important details about you (like your name, favorite color, or deadlines). She intelligently decides what to remember based on your relationship and the context, filtering out trivial chatter.
+*   **👀 Dual-Core AI Vision**: Powered by **Gemini 2.5 Flash**, Rem has a dedicated "Vision Brain". She takes snapshots of your screen to identify icons and intelligently decides where to sit or walk—no more random wandering!
+*   **🚀 Smart App Launcher**: Just say "Open [App Name]". Rem scans your Windows Start Menu shortcuts to find the correct application.
 *   **🖱️ Interactive Physics**: Rem is not just a static image.
-    *   **Drag & Drop**: Pick her up with your mouse! She will grab your cursor (`climb` animation).
-    *   **Gravity**: Release her, and she will fall (`fall` animation) and land gracefully (`land` animation) on the taskbar or window.
+    *   **Drag & Drop**: Pick her up with your mouse! She grabs your cursor (`hold` animation).
+    *   **Gravity**: Release her, and she falls (`fall` animation) and lands gracefully (`land` animation).
     *   **Eye Contact**: When idle, she follows your mouse cursor with her eyes.
-*   **🔍 Smart Web Search (RAG)**: Using the **Google Custom Search API**, Rem researches your questions. She reads the search results silently, filters out irrelevant data (like football scores when asking for history), and synthesizes a direct, intelligent answer for you.
-*   **Voice Control**: Activate her by calling her wake word ("Rem" by default) and give commands in natural language.
+*   **🔍 Smart Web Search (RAG)**: Using **Google Custom Search API**, Rem researches your questions, filters irrelevant data, and synthesizes a direct answer.
 *   **Core Assistant Tools**:
     *   🎵 **Spotify Control**: Play, pause, and skip tracks.
-    *   🌦️ **Weather Information**: Get the current weather for any city with accurate status descriptions.
-    *   💻 **Secure Code Execution**: Ask her to perform system tasks by generating Python scripts. She will always ask for your permission before running any code.
-*   **Customizable**: Easily change the wake word, character animations, and configuration via a GUI menu.
+    *   🌦️ **Weather Information**: Get accurate weather reports.
+    *   💻 **Secure Code Execution**: Generate and run Python scripts safely.
 
 ---
 
@@ -85,7 +96,7 @@ If you want to modify the code or run it directly with Python.
     ```bash
     python -m venv venv
     venv\Scripts\activate
-    pip install google-genai pygame gtts pyautogui Pillow SpeechRecognition spotipy requests PyQt5
+    pip install google-genai pygame gtts pyautogui Pillow SpeechRecognition spotipy requests PyQt5 pygetwindow
     ```
 
 4.  **Configure API Keys**
