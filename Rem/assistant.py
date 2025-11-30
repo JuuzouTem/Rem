@@ -9,7 +9,7 @@ import threading
 import subprocess
 import configparser
 import pygetwindow as gw
-from datetime import datetime
+from datetime import datetimef
 
 from google import genai
 from google.genai import types
@@ -220,7 +220,16 @@ class DesktopAssistant(QWidget):
             2. Eğer bir araç (tool) kullanacaksan, SADECE JSON çıktısı ver. Ekstra metin yazma. Söylemek istediğin şeyi JSON içindeki "yanit" kısmına yaz.
             3. "duygu" parametresini mutlaka ekle. Seçeneklerin: ["mutlu", "uzgun", "kizgin", "saskin", "normal", "utangac"].
             4. Normal sohbetlerde bile JSON formatını koru ki yüz ifaden değişebilsin.
-            5. "iliski_etkisi" parametresini kullanarak puanı yönet. Eğer kullanıcı sana iltifat ederse "+5", hakaret ederse "-5", nötr ise "0" yaz.
+            5. "iliski_etkisi" (Sevgi Puanı) Yönetimi İçin KESİN KURALLAR:
+               - Puan Arttır (+): 
+                 * İltifatlar ve nazik davranışlar.
+                 * GÜVEN VE DERTLEŞME: Kullanıcı üzücü bir olayını (ölüm, ayrılık, başarısızlık) anlatırsa, bu sana güvendiği anlamına gelir. Sen de üzülmelisin (duygu: "uzgun") AMA aradaki bağ güçlendiği için puanı ARTTIR (+5). Acısını paylaştığın için onur duy.
+               - Puan Düşür (-): 
+                 * Sadece sana yapılan hakaretler, kabalıklar veya terslemeler.
+               - Nötr (0):
+                 * Günlük sıradan emirler ("Şunu aç", "Hava nasıl").
+               - Duyguları anla:
+                 * İnsan duyguları karmaşıktır ve kötü her zaman (-) puana eşit değildir. Konuşmayı anlayarak duygunu, puanını belirle.
 
             YANIT FORMATI (JSON ŞABLONLARI):
 
@@ -381,7 +390,7 @@ class DesktopAssistant(QWidget):
         return "İyi geceler efendim..."
 
     def shutdown_assistant(self):
-        self.show_speech_bubble("Görüşmek üzere efendim.", force_speak=True)
+        self.show_speech_bubble("Görüşmek üzere efendim.", force_speak=False)
         QTimer.singleShot(2000, self.close)
         return ""
 
@@ -766,7 +775,7 @@ class DesktopAssistant(QWidget):
                 self.process_dropped_image(f)
                 break 
             else:
-                self.show_speech_bubble("Efendim, bu dosya türünü anlayamıyorum...", force_speak=True)
+                self.show_speech_bubble("Efendim, bu dosya türünü anlayamıyorum...", force_speak=False)
 
     def process_dropped_image(self, file_path):
         self.show_speech_bubble("Bu nedir efendim? İnceliyorum...", force_speak=False)
@@ -821,7 +830,7 @@ class DesktopAssistant(QWidget):
         if self.is_listening:
             self.show_speech_bubble("Dinliyorum...", force_speak=True)
             threading.Thread(target=self.listen_loop, daemon=True).start()
-        else: self.show_speech_bubble("Dinleme kapalı.", force_speak=True)
+        else: self.show_speech_bubble("Dinleme kapalı.", force_speak=False)
 
     def listen_loop(self):
         with sr.Microphone() as source:
@@ -934,7 +943,7 @@ class DesktopAssistant(QWidget):
                 self.start_night_mode()
 
             elif random.random() < 0.1: 
-                self.show_speech_bubble("Efendim... Hala uyumadınız mı? Gözleriniz bozulacak...", force_speak=True)
+                self.show_speech_bubble("Efendim... Hala uyumadınız mı? Gözleriniz bozulacak...", force_speak=False)
                 self.set_state('sleeping') 
 
         else:
@@ -948,7 +957,7 @@ class DesktopAssistant(QWidget):
 
     def stop_night_mode(self):
         self.is_night_mode = False
-        self.show_speech_bubble("Günaydın efendim! Rem göreve hazır!", force_speak=True)
+        self.show_speech_bubble("Günaydın efendim! Rem göreve hazır!", force_speak=False)
         self.set_state('happy')
 
 if __name__ == '__main__':
