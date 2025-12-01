@@ -9,7 +9,7 @@ import threading
 import subprocess
 import configparser
 import pygetwindow as gw
-from datetime import datetimef
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -963,4 +963,5 @@ class DesktopAssistant(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     assistant = DesktopAssistant()
+
     sys.exit(app.exec_())
